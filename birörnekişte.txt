@@ -1,0 +1,5 @@
+{
+ "isim":"Berdan",
+ "Soyad":"Bozan",
+ "Yas":18 
+}

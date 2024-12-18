@@ -1,0 +1,4 @@
+ Hallo, das ist meine erste Datei
+ Ich heiße Beydan
+ und ich übe Python
+ etwas vıdıdıdıdı
