@@ -2,13 +2,7 @@ import requests
 import json
 import time
 import re
-import textwrap
 
-#{"success":True,"session_id":"fd7faeb65aef93d35b3ecb10045e6dde6cacb6d9"}
-#{"success":True,"expires_at":"2024-12-07 01:21:12 UTC","request_token":"6e89e3bc06753bc48fbb4acb041c4ce70c441265"}
-#API_key = "79f37e110dd9ac7af705b449fb937f38"
-#API_Read_Access_Token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3OWYzN2UxMTBkZDlhYzdhZjcwNWI0NDlmYjkzN2YzOCIsIm5iZiI6MTczMzUwODIzNy45MjUsInN1YiI6IjY3NTMzYzhkNTE2ZWRlYWIyOTk5NGU5NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.vn8i4bHGCgJptXCRcb1nl9SX8kWaRpe1oLsp_2eVNKk"
-#account_id = 21673769
 
 class Kullanıcı:
     def __init__(self, account_id, API_key, session_id, API_Read_Access_Token):
@@ -36,8 +30,6 @@ class Film:
             time.sleep(.5)
         time.sleep(.6)
          
-
-
     def menu(self):
         def control(secim):
             if secim.isdigit() == False:
@@ -53,9 +45,10 @@ class Film:
                         \nWelcome.
                             [1]- Popular Movies
                             [2]- Popular TV Series
-                            [3]- My Favorities
-                            [4]- Add to my favorities
-                            [5]- Exit
+                            [3]- Search Movies
+                            [4]- Add To My Favorities
+                            [5]- My Favorities
+                            [6]- Exit
                               """)
                 control(secim)
             except Exception as Hata:
@@ -78,13 +71,17 @@ class Film:
         
         elif secim == "3":
             self.time(3)
-            self.my_favorites()
-
+            self.search()
+        
         elif secim == "4":
             self.time(3)
             self.add_to_my_favorities()
 
         elif secim == "5":
+            self.time(3)
+            self.my_favorites()            
+
+        elif secim == "6":
             self.time(3)
             self.exit()
 
@@ -100,7 +97,7 @@ class Film:
             params = {
                 "api_key": kullanıcı.API_key,  
                 "language": "en-US",  
-                "page": page  # İlk sayfa
+                "page": page  
             }
 
             response = requests.get(url, params=params)
@@ -141,7 +138,7 @@ class Film:
             params = {
                 "api_key": kullanıcı.API_key,  
                 "language": "en-US",  
-                "page": page  # İlk sayfa
+                "page": page  
             }
 
             response = requests.get(url, params=params)
@@ -168,31 +165,122 @@ class Film:
                 elif secim not in ["1", "2", "3"]:
                     print("Invalid selection, please try again.")
     
-    def add_to_my_favorities(self,):
-        while True:
-            url = f"https://api.themoviedb.org/3/account/{self.account_id}/favorite??session_id={self.session_id}"
+    def add_to_my_favorities(self):
             
-            payload = {
-            "media_type": media_type,
-            "media_id": media_id,
-            "favorite": favorite
+            movie_name = input("\nEnter a movie name: ")
+            movie_id = self.search_for_another_function(movie_name)
+
+            url = f"https://api.themoviedb.org/3/account/{kullanıcı.account_id}/favorite??session_id={kullanıcı.session_id}"
+            
+            headers = {
+            "Authorization": f"Bearer {kullanıcı.API_Read_Acces_Token}",  
+            "Content-Type": "application/json"
             }
+
+            payload = {
+            "media_type": "movie",
+            "media_id": movie_id,
+            "favorite": True
+            }
+
+            response = requests.post(url, headers=headers, json = payload)
+
+            if response.status_code == 201:
+                print("Movie successfully added to favorites!")
+            else:
+                print(f"Error: {response.status_code}, {response.text}")
+
+
 
 
     def my_favorites(self):
-        pass
+
+        url = f"https://api.themoviedb.org/3/account/{kullanıcı.account_id}/favorite/movies?session_id={kullanıcı.session_id}"
+        
+        headers = {
+            "Authorization": f"Bearer {kullanıcı.API_Read_Acces_Token}",
+            "Content-Type": "application/json"
+        }
+        
+        params = {
+            "language": "en-US",
+            "sort_by": "created_at.desc",  # The last added favorities are at he top
+            "page": 1                     
+        }
+        
+        
+        response = requests.get(url, headers=headers, params=params)
+
+        if response.status_code == 200:
+            favorites = response.json().get("results")
+            if favorites:
+                print("\nYour favorite movies:")
+                for movie in favorites:
+                    print(f"- {movie['title']} (ID: {movie['id']})")
+            else:
+                print("No favorites found.")
+        else:
+            print(f"Error: {response.status_code}, {response.text}")
+
+
+    def search_for_another_function(self,movie_name):
+
+        url = "https://api.themoviedb.org/3/search/movie"
+        params = {
+            "api_key": kullanıcı.API_key,
+            "query": movie_name,
+            "language": "en-US",
+            "page": 1
+        }
+        response = requests.get(url, params=params)
+        search_results = response.json().get("results")
+
+        if search_results:
+            # select the first response
+            selected_movie = search_results[0]
+            movie_id = selected_movie["id"]
+
+            return movie_id
+        else:
+            print("No results found.")
+            return None
+
+
+
 
     def search(self):
-        pass
 
-    def directly_addtomyfrts(self):
-        pass
+        movie_name = input("\nEnter a movie name: ")
+
+        url = "https://api.themoviedb.org/3/search/movie"
+        params = {
+            "api_key": kullanıcı.API_key,
+            "query": movie_name,
+            "language": "en-US",
+            "page": 1
+        }
+        response = requests.get(url, params=params)
+        search_results = response.json().get("results")
+
+        if search_results:
+            # select the first response
+            selected_movie = search_results[0]
+            print(f'\n\n-{selected_movie["title"]}- ({selected_movie["release_date"]}), Ratings: {selected_movie["vote_average"]}\n')
+            print(f'Overview: -{selected_movie["overview"]}-')
+            
+            self.time(5)
+
+        else:
+            print("No results found.")
+            self.time(3)
+            return None
+        
 
     def page_number(self):
         while True:
             page = input("Enter the page you want to see:")
             if page.isdigit() and 1 <= int(page) <= 10:
-                return int(page)  # Düzgün bir sayı girildi, dönüş yapılabilir
+                return int(page)  #
             else:
                 print("You can only enter a number between 1 and 10")
         
